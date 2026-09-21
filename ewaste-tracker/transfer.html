@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Hand a device to a new owner in two steps: offer it, then accept it.">
+  <meta name="theme-color" content="#0b2b26">
+  <title>Transfer ownership | E-Waste Tracker</title>
+  <script>(function(){try{var t=localStorage.getItem('ew_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="transfer">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="site-header"></div>
+
+  <main id="main">
+    <section class="page-head">
+      <div class="container">
+        <div>
+          <h1>Transfer ownership</h1>
+          <p>Hand a device to a new owner in two steps. You offer it, then they accept it from their own wallet.</p>
+          <span class="chip chip-light">Current owner and new owner</span>
+        </div>
+        <div class="page-stage"><canvas id="sceneCanvas" data-scene="swap" role="img" aria-label="A block passing between two owners"></canvas></div>
+      </div>
+    </section>
+
+    <div class="container page-body">
+      <div class="flow" aria-label="How a transfer works">
+        <div class="flow-node">Current owner<small>offers the device</small></div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">Pending<small>waits on-chain</small></div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">New owner<small>accepts it</small></div>
+      </div>
+
+      <div class="grid-2">
+        <section class="panel" aria-labelledby="offerTitle">
+          <div class="panel-head"><span class="step-badge">1</span><div><h2 id="offerTitle">Offer the device</h2><p>Use the wallet that currently owns it.</p></div></div>
+          <form id="offerForm" novalidate>
+            <label class="field"><span>Device ID</span><input id="transferDeviceId" type="number" min="1" step="1" inputmode="numeric" placeholder="1" required></label>
+            <label class="field"><span>New owner's wallet address</span><input id="transferNewOwner" placeholder="0x…" autocomplete="off" spellcheck="false" required></label>
+            <div id="ownerHint" class="muted" style="font-size:.86rem;margin:-6px 0 14px" aria-live="polite"></div>
+            <button class="btn btn-primary" id="offerBtn" type="submit">Offer transfer</button>
+            <div id="offerMsg" class="notice" hidden></div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="acceptTitle">
+          <div class="panel-head"><span class="step-badge">2</span><div><h2 id="acceptTitle">Accept the device</h2><p>Use the wallet the device was offered to.</p></div></div>
+          <form id="acceptForm" novalidate>
+            <label class="field"><span>Device ID</span><input id="acceptDeviceId" type="number" min="1" step="1" inputmode="numeric" placeholder="1" required></label>
+            <div id="pendingHint" class="muted" style="font-size:.86rem;margin:-6px 0 14px" aria-live="polite"></div>
+            <button class="btn btn-gold" id="acceptBtn" type="submit">Accept transfer</button>
+            <div id="acceptMsg" class="notice" hidden></div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/transfer.js"></script>
+</body>
+</html>

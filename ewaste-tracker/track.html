@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Scan a QR code or enter a device ID to see a device's full lifecycle and ownership history.">
+  <meta name="theme-color" content="#0b2b26">
+  <title>Track a device | E-Waste Tracker</title>
+  <script>(function(){try{var t=localStorage.getItem('ew_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="track">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="site-header"></div>
+
+  <main id="main">
+    <section class="page-head">
+      <div class="container">
+        <div>
+          <h1>Track a device</h1>
+          <p>Scan a QR code or enter a device ID to see where a device is in its life and who has handled it.</p>
+          <span class="chip chip-light">Open to everyone, no wallet needed</span>
+        </div>
+        <div class="page-stage"><canvas id="sceneCanvas" data-scene="scan" role="img" aria-label="A knot being scanned by a moving beam"></canvas></div>
+      </div>
+    </section>
+
+    <div class="container page-body">
+      <div class="grid-track">
+        <section class="panel sticky" aria-labelledby="findTitle">
+          <div class="panel-head"><div><h2 id="findTitle">Find a device</h2></div></div>
+
+          <div class="tabs" role="tablist" aria-label="How to find a device">
+            <button class="tab" role="tab" id="t-scan" data-tab="scan" aria-selected="true" aria-controls="tab-scan">Scan QR</button>
+            <button class="tab" role="tab" id="t-id" data-tab="id" aria-selected="false" aria-controls="tab-id" tabindex="-1">Device ID</button>
+            <button class="tab" role="tab" id="t-qr" data-tab="qr" aria-selected="false" aria-controls="tab-qr" tabindex="-1">QR hash</button>
+          </div>
+
+          <div class="tabpanel" id="tab-scan" role="tabpanel" aria-labelledby="t-scan">
+            <p class="muted" style="font-size:.9rem;margin-top:0">Allow camera access, then hold the device's QR label in front of it.</p>
+            <button class="btn btn-primary btn-block" id="startScanBtn" type="button">Start camera</button>
+            <button class="btn btn-outline btn-block" id="stopScanBtn" type="button" hidden>Stop camera</button>
+            <div id="qrReader"></div>
+            <div id="scanMsg" class="notice" hidden></div>
+          </div>
+
+          <form class="tabpanel" id="tab-id" role="tabpanel" aria-labelledby="t-id" hidden>
+            <label class="field"><span>Device ID</span><input id="lookupId" type="number" min="1" step="1" inputmode="numeric" placeholder="1"></label>
+            <button class="btn btn-primary btn-block" type="submit">Look up device</button>
+          </form>
+
+          <form class="tabpanel" id="tab-qr" role="tabpanel" aria-labelledby="t-qr" hidden>
+            <label class="field"><span>QR hash or link</span><input id="lookupQr" placeholder="0x… or the full link" autocomplete="off"><small>Paste this if your device has no camera access.</small></label>
+            <button class="btn btn-primary btn-block" type="submit">Look up device</button>
+          </form>
+
+          <div id="lookupMsg" class="notice" hidden></div>
+        </section>
+
+        <div id="deviceResult" aria-live="polite">
+          <div class="empty-state">
+            <strong>No device selected</strong>
+            <span>Scan a QR code or enter an ID to see its passport here.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/track.js"></script>
+</body>
+</html>

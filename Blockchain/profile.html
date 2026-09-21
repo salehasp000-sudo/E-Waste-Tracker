@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Devices — EcoChain</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="pages.css" />
+</head>
+<body>
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <div class="page-wrapper">
+    <nav class="navbar">
+      <div class="container">
+        <a href="../index.html" class="nav-logo"><div class="logo-icon">♻</div>Eco<span>Chain</span></a>
+        <div class="nav-links">
+          <a href="../index.html" class="nav-link">Home</a>
+          <a href="register.html" class="nav-link">Register Device</a>
+          <a href="track.html" class="nav-link">Track Device</a>
+          <a href="dashboard.html" class="nav-link">Dashboard</a>
+          <a href="lifecycle.html" class="nav-link">Lifecycle</a>
+          <a href="profile.html" class="nav-link active">My Devices</a>
+        </div>
+        <div class="nav-actions">
+          <button id="connect-wallet-btn" class="btn btn-primary btn-sm">🦊 Connect Wallet</button>
+          <div id="wallet-badge" class="wallet-badge" style="display:none"><div class="wallet-dot"></div><span class="wallet-addr">—</span></div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-header">
+      <div class="container">
+        <!-- <div class="section-label">REQ-F-16 to F-18</div> -->
+        <h1>My <span class="text-cyan">Devices</span></h1>
+        <p>All devices registered or managed under your connected Ethereum wallet address.</p>
+      </div>
+    </div>
+
+    <section class="section-sm">
+      <div class="container">
+
+        <!-- Wallet gate -->
+        <div id="profile-gate" class="card" style="text-align:center;padding:60px 40px">
+          <div style="font-size:3.5rem;margin-bottom:20px">🦊</div>
+          <h3>Connect Your Wallet</h3>
+          <p style="margin:12px 0 28px;max-width:360px;margin-left:auto;margin-right:auto">
+            Connect your MetaMask wallet to view all devices associated with your Ethereum address.
+          </p>
+          <button class="btn btn-primary btn-lg" onclick="connectWallet()">Connect MetaMask</button>
+        </div>
+
+        <!-- Profile content (shown after connect) -->
+        <div id="profile-content" class="wallet-required" style="display:none">
+
+          <!-- Wallet info header -->
+          <div class="card profile-header-card" style="margin-bottom:28px">
+            <div class="profile-header">
+              <div class="profile-avatar">
+                <span style="font-size:2rem">⬡</span>
+              </div>
+              <div class="profile-info">
+                <div id="profile-wallet" class="mono text-cyan" style="font-size:1rem;word-break:break-all">—</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+                  <span id="profile-role-badge" class="badge badge-cyan">Manufacturer</span>
+                  <span class="badge badge-green"><span class="dot"></span> Connected to Sepolia</span>
+                </div>
+              </div>
+              <div class="profile-stats-mini">
+                <div class="psm-item"><div class="psm-val text-cyan" id="psm-registered">3</div><div class="psm-key">Registered</div></div>
+                <div class="psm-item"><div class="psm-val text-green" id="psm-recycled">1</div><div class="psm-key">Recycled</div></div>
+                <div class="psm-item"><div class="psm-val text-amber" id="psm-active">2</div><div class="psm-key">Active</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter bar -->
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
+            <span class="form-label" style="margin:0;white-space:nowrap">Filter:</span>
+            <button class="filter-btn active" onclick="filterDevices('all', this)">All</button>
+            <button class="filter-btn" onclick="filterDevices('Registered', this)">Registered</button>
+            <button class="filter-btn" onclick="filterDevices('Collected', this)">Collected</button>
+            <button class="filter-btn" onclick="filterDevices('Recycled', this)">Recycled</button>
+            <div style="margin-left:auto">
+              <a href="register.html" class="btn btn-primary btn-sm">+ Register New Device</a>
+            </div>
+          </div>
+
+          <!-- Devices grid -->
+          <div class="devices-grid" id="devices-grid">
+            <!-- JS injected -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Device detail modal -->
+  <div class="modal-overlay" id="device-modal">
+    <div class="modal" style="max-width:620px">
+      <button class="modal-close" onclick="closeModal('device-modal')">✕ Close</button>
+      <h3 style="margin-bottom:20px" id="modal-device-name">Device Details</h3>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    const DEVICE_ICONS = { Smartphone:'📱', Laptop:'💻', Television:'📺', Tablet:'📟', Monitor:'🖥', Printer:'🖨', default:'⚡' };
+    let currentFilter = 'all';
+
+    function filterDevices(filter, btn) {
+      currentFilter = filter;
+      $$('.filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderDevices();
+    }
+
+    function renderDevices() {
+      const grid = document.getElementById('devices-grid');
+      if (!grid) return;
+      let devices = AppState.devices;
+      if (currentFilter !== 'all') devices = devices.filter(d => d.status === currentFilter);
+
+      if (devices.length === 0) {
+        grid.innerHTML = `<div class="card" style="text-align:center;padding:40px;grid-column:1/-1">
+          <div style="font-size:2.5rem;opacity:0.3;margin-bottom:12px">◉</div>
+          <p>No devices found for this filter.</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = devices.map(d => {
+        const icon = DEVICE_ICONS[d.type] || DEVICE_ICONS.default;
+        return `
+        <div class="device-card card" onclick="openDeviceModal('${d.id}')">
+          <div class="dc-top">
+            <div class="dc-icon">${icon}</div>
+            <div>${statusBadge(d.statusCode)}</div>
+          </div>
+          <h4 class="dc-name">${d.name}</h4>
+          <div class="dc-type mono" style="font-size:0.75rem;color:var(--text-muted)">${d.type}</div>
+          <div class="divider" style="margin:12px 0"></div>
+          <div class="dc-meta">
+            <div class="dc-meta-row"><span>ID</span><span class="mono text-cyan">${d.id}</span></div>
+            <div class="dc-meta-row"><span>Mfr</span><span>${d.manufacturer}</span></div>
+            <div class="dc-meta-row"><span>Date</span><span>${d.dop}</span></div>
+          </div>
+          <div class="dc-footer">
+            <span class="mono" style="font-size:0.7rem;color:var(--text-muted)">${d.history.length} blockchain events</span>
+            <span class="tag tag-outline" style="font-size:0.68rem;cursor:pointer">View →</span>
+          </div>
+        </div>
+      `}).join('');
+    }
+
+    function openDeviceModal(id) {
+      const device = AppState.devices.find(d => d.id === id);
+      if (!device) return;
+      document.getElementById('modal-device-name').textContent = device.name;
+      document.getElementById('modal-content').innerHTML = `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+          ${statusBadge(device.statusCode)}
+          <span class="badge badge-cyan">${device.type}</span>
+        </div>
+        <div class="device-meta-grid" style="margin-bottom:20px">
+          <div class="device-meta-item"><div class="dmi-key">Device ID</div><div class="dmi-val mono text-cyan">${device.id}</div></div>
+          <div class="device-meta-item"><div class="dmi-key">Serial</div><div class="dmi-val mono">${device.serial}</div></div>
+          <div class="device-meta-item"><div class="dmi-key">Manufacturer</div><div class="dmi-val">${device.manufacturer}</div></div>
+          <div class="device-meta-item"><div class="dmi-key">Date of Manufacture</div><div class="dmi-val">${device.dop}</div></div>
+          <div class="device-meta-item"><div class="dmi-key">Tx Hash</div><div class="dmi-val mono" style="font-size:0.78rem;cursor:pointer" onclick="copyText('${device.txHash}')">${device.txHash} 📋</div></div>
+          <div class="device-meta-item"><div class="dmi-key">Owner</div><div class="dmi-val mono text-cyan">${device.owner}</div></div>
+        </div>
+        <h4 style="margin-bottom:16px">⬡ Blockchain History</h4>
+        <div class="status-track">
+          ${device.history.map((h, i) => `
+            <div class="status-step" ${i === device.history.length-1 ? 'style="padding-bottom:0"':''}>
+              <div class="status-dot ${i === device.history.length-1 ? 'current' : 'done'}">
+                ${i === device.history.length-1 ? '●' : '✓'}
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:0.9rem">${h.status}</div>
+                <div class="mono" style="font-size:0.72rem;color:var(--text-muted)">${h.time} · ${h.actor}</div>
+                <div class="mono" style="font-size:0.7rem;color:var(--cyan);cursor:pointer;margin-top:2px"
+                  onclick="copyText('${h.tx}')">${h.tx} 📋</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+          <a href="track.html" class="btn btn-outline btn-sm">🔍 Full Track View</a>
+          <button class="btn btn-green btn-sm" onclick="alert('QR download would trigger here')">⬇ Download QR</button>
+        </div>
+      `;
+      openModal('device-modal');
+    }
+
+    // Activate profile on wallet connect
+    const origUpdateWalletUI = window.updateWalletUI;
+    document.addEventListener('DOMContentLoaded', () => {
+      // Override wallet connected state for demo
+      const gate = document.getElementById('profile-gate');
+      const content = document.getElementById('profile-content');
+
+      // If already connected (via connect button)
+      const origConnect = document.getElementById('connect-wallet-btn');
+      if (origConnect) {
+        origConnect.addEventListener('click', () => {
+          setTimeout(() => {
+            if (gate) gate.style.display = 'none';
+            if (content) { content.style.display = 'block'; }
+            document.getElementById('profile-wallet').textContent = '0x4f3D8aE9b2C1e7F3d5A6c8B0e2F4a6C8b0E2f4A6';
+            renderDevices();
+          }, 2000);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

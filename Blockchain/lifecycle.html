@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Device Lifecycle — EcoChain</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="pages.css" />
+</head>
+<body>
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <div class="page-wrapper">
+    <nav class="navbar">
+      <div class="container">
+        <a href="../index.html" class="nav-logo"><div class="logo-icon">♻</div>Eco<span>Chain</span></a>
+        <div class="nav-links">
+          <a href="../index.html" class="nav-link">Home</a>
+          <a href="register.html" class="nav-link">Register Device</a>
+          <a href="track.html" class="nav-link">Track Device</a>
+          <a href="dashboard.html" class="nav-link">Dashboard</a>
+          <a href="lifecycle.html" class="nav-link active">Lifecycle</a>
+          <a href="profile.html" class="nav-link">My Devices</a>
+        </div>
+        <div class="nav-actions">
+          <button id="connect-wallet-btn" class="btn btn-primary btn-sm">🦊 Connect Wallet</button>
+          <div id="wallet-badge" class="wallet-badge" style="display:none"><div class="wallet-dot"></div><span class="wallet-addr">—</span></div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-header">
+      <div class="container">
+        <!-- <div class="section-label">State Diagram — SRS Section 6.6</div> -->
+        <h1>E-Waste <span class="text-cyan">Lifecycle</span></h1>
+        <p>The complete forward-only lifecycle of every electronic device, enforced at the smart contract level.</p>
+      </div>
+    </div>
+
+    <section class="section-sm">
+      <div class="container">
+
+        <!-- Visual lifecycle timeline -->
+        <div class="card lifecycle-card" style="margin-bottom:32px">
+          <div class="lifecycle-timeline" id="lifecycle-timeline">
+            <!-- JS injected -->
+          </div>
+          <div class="lifecycle-rule">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span class="mono" style="font-size:0.78rem;color:var(--amber)">
+              BUSINESS RULE: Lifecycle status can only move <strong>forward</strong>. Backward transitions are permanently blocked by the Solidity smart contract.
+            </span>
+          </div>
+        </div>
+
+        <!-- Interactive demo -->
+        <div class="lc-demo-grid">
+          <div class="card">
+            <h3 style="margin-bottom:8px">Interactive Demo</h3>
+            <p style="font-size:0.86rem;margin-bottom:24px">Simulate how a device progresses through its lifecycle stages on the blockchain.</p>
+
+            <div class="demo-device-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+                <div>
+                  <div style="font-weight:700">Demo Device: iPhone 15 Pro</div>
+                  <div class="mono" style="font-size:0.75rem;color:var(--text-muted)">DEV-DEMO-AAFF</div>
+                </div>
+                <span id="demo-status-badge" class="badge badge-cyan">📋 Registered</span>
+              </div>
+              <div class="progress-bar" style="height:8px;margin-bottom:8px">
+                <div class="progress-fill" id="demo-progress" style="width:16%"></div>
+              </div>
+              <div class="mono" style="font-size:0.72rem;color:var(--text-muted);text-align:right" id="demo-progress-label">Stage 1 of 6</div>
+            </div>
+
+            <div id="demo-steps" style="margin:24px 0">
+              <!-- Steps injected by JS -->
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="advanceDemo()" id="advance-btn">
+                → Advance to Next Stage
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="resetDemo()">↺ Reset</button>
+            </div>
+          </div>
+
+          <!-- Business rules panel -->
+          <div>
+            <div class="card" style="margin-bottom:20px">
+              <h4 style="margin-bottom:16px">⚿ Smart Contract Rules</h4>
+              <div class="rule-list">
+                <div class="rule-item"><span class="text-green">✓</span> Device can only move to the <em>next</em> stage</div>
+                <div class="rule-item"><span class="text-green">✓</span> Only certified recyclers can trigger stages 4 & 5</div>
+                <div class="rule-item"><span class="text-green">✓</span> All transitions require MetaMask confirmation</div>
+                <div class="rule-item"><span class="text-red">✕</span> Backward transitions are permanently blocked</div>
+                <div class="rule-item"><span class="text-red">✕</span> QR codes cannot be reassigned to another device</div>
+                <div class="rule-item"><span class="text-red">✕</span> Confirmed transactions cannot be reversed</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h4 style="margin-bottom:16px">👤 Role Permissions</h4>
+              <div class="role-table">
+                <div class="role-row header">
+                  <div>Role</div><div>Register</div><div>Update</div><div>Dispose</div>
+                </div>
+                <div class="role-row"><div>Manufacturer</div><div class="text-green">✓</div><div class="text-red">✕</div><div class="text-red">✕</div></div>
+                <div class="role-row"><div>Consumer</div><div class="text-red">✕</div><div class="text-green">✓</div><div class="text-red">✕</div></div>
+                <div class="role-row"><div>Collector</div><div class="text-red">✕</div><div class="text-green">✓</div><div class="text-red">✕</div></div>
+                <div class="role-row"><div>Recycler</div><div class="text-red">✕</div><div class="text-green">✓</div><div class="text-green">✓</div></div>
+                <div class="role-row"><div>Regulator</div><div class="text-red">✕</div><div class="text-red">✕</div><div class="text-red">✕</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    // ── Lifecycle stages ──
+    const stages = [
+      { code:1, label:'Registered',             icon:'📋', color:'cyan',   desc:'Device recorded on Ethereum. QR code generated.',       role:'Manufacturer' },
+      { code:2, label:'QR Generated',           icon:'◉', color:'cyan',   desc:'Unique QR code issued and linked to blockchain record.', role:'System' },
+      { code:3, label:'Sold / With Consumer',   icon:'🛒', color:'purple', desc:'Ownership transferred to end consumer.',                role:'Manufacturer' },
+      { code:4, label:'Collected',              icon:'📦', color:'amber',  desc:'Device handed to certified waste collector.',           role:'Consumer' },
+      { code:5, label:'Processing by Recycler', icon:'⚙️', color:'amber',  desc:'Certified recycler breaks down the device.',            role:'Recycler' },
+      { code:6, label:'Recycled / Closed',      icon:'♻️', color:'green',  desc:'Device fully processed. Lifecycle complete.',           role:'Recycler' },
+    ];
+
+    // ── Render horizontal timeline ──
+    function renderTimeline() {
+      const el = document.getElementById('lifecycle-timeline');
+      if (!el) return;
+      el.innerHTML = stages.map((s, i) => `
+        <div class="lc-stage">
+          <div class="lc-stage-icon badge-${s.color}">${s.icon}</div>
+          <div class="lc-stage-label">${s.label}</div>
+          <div class="lc-stage-role mono" style="font-size:0.68rem;color:var(--text-muted)">${s.role}</div>
+          ${i < stages.length-1 ? '<div class="lc-arrow">→</div>' : ''}
+        </div>
+      `).join('');
+    }
+
+    // ── Demo logic ──
+    let demoStage = 0;
+    const demoProgressPct = [16, 33, 50, 67, 83, 100];
+    const demoBadgeClasses = ['badge-cyan','badge-cyan','badge-purple','badge-amber','badge-amber','badge-green'];
+
+    function renderDemoSteps() {
+      const el = document.getElementById('demo-steps');
+      if (!el) return;
+      el.innerHTML = stages.map((s, i) => `
+        <div class="demo-step ${i < demoStage ? 'done' : i === demoStage ? 'current' : 'pending'}">
+          <div class="ds-dot">${i < demoStage ? '✓' : i+1}</div>
+          <div>
+            <div style="font-weight:600;font-size:0.88rem">${s.icon} ${s.label}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted)">${s.desc}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function advanceDemo() {
+      if (demoStage >= stages.length - 1) { showToast('Lifecycle complete! Device is closed.', 'success'); return; }
+      demoStage++;
+      const s = stages[demoStage];
+      document.getElementById('demo-status-badge').className = `badge ${demoBadgeClasses[demoStage]}`;
+      document.getElementById('demo-status-badge').textContent = `${s.icon} ${s.label}`;
+      document.getElementById('demo-progress').style.width = demoProgressPct[demoStage] + '%';
+      document.getElementById('demo-progress-label').textContent = `Stage ${demoStage+1} of 6`;
+      if (demoStage === stages.length - 1) {
+        document.getElementById('advance-btn').textContent = '✓ Complete';
+        document.getElementById('advance-btn').disabled = true;
+      }
+      renderDemoSteps();
+      showToast(`Stage advanced: ${s.label}`, 'success', 2000);
+    }
+
+    function resetDemo() {
+      demoStage = 0;
+      const s = stages[0];
+      document.getElementById('demo-status-badge').className = 'badge badge-cyan';
+      document.getElementById('demo-status-badge').textContent = `${s.icon} ${s.label}`;
+      document.getElementById('demo-progress').style.width = '16%';
+      document.getElementById('demo-progress-label').textContent = 'Stage 1 of 6';
+      const btn = document.getElementById('advance-btn');
+      btn.textContent = '→ Advance to Next Stage';
+      btn.disabled = false;
+      renderDemoSteps();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderTimeline();
+      renderDemoSteps();
+    });
+  </script>
+</body>
+</html>

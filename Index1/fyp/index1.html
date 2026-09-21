@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>E-Waste Tracking System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --green:#1f7a4d; --green-dark:#155c39; --bg:#f4f7f5; --card:#ffffff;
+    --text:#1c2321; --muted:#6b7770; --border:#dfe6e1; --danger:#b3261e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--bg); color:var(--text); padding-bottom:60px;
+  }
+  header{
+    background:var(--green-dark); color:#fff; padding:18px 24px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+  }
+  header h1{ font-size:18px; margin:0; }
+  #connectBtn{
+    background:#fff; color:var(--green-dark); border:none; padding:10px 18px;
+    border-radius:6px; font-weight:600; cursor:pointer;
+  }
+  #connectBtn:hover{ background:#eaf3ee; }
+  #accountInfo{ font-size:13px; text-align:right; }
+  #roleBadges span{
+    display:inline-block; background:rgba(255,255,255,0.15); padding:2px 8px;
+    border-radius:10px; font-size:11px; margin-left:4px;
+  }
+  main{ max-width:900px; margin:24px auto; padding:0 16px; display:grid; gap:20px; }
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:18px 20px;
+  }
+  .card h2{ margin-top:0; font-size:16px; color:var(--green-dark); border-bottom:1px solid var(--border); padding-bottom:8px;}
+  .card h2 small{ color:var(--muted); font-weight:normal; font-size:12px;}
+  label{ display:block; font-size:13px; margin:10px 0 4px; color:var(--muted); }
+  input, select{
+    width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;
+    font-size:14px; background:#fbfdfc;
+  }
+  button.action{
+    margin-top:14px; background:var(--green); color:#fff; border:none;
+    padding:10px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:14px;
+  }
+  button.action:hover{ background:var(--green-dark); }
+  button.secondary{ background:#eef2ef; color:var(--text); }
+  button.secondary:hover{ background:#e0e7e2; }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:600px){ .row{ grid-template-columns:1fr; } }
+  .status-msg{ margin-top:12px; font-size:13px; padding:10px; border-radius:6px; display:none; word-break:break-word; }
+  .status-msg.ok{ background:#e7f5ec; color:var(--green-dark); display:block; }
+  .status-msg.err{ background:#fbeceb; color:var(--danger); display:block; }
+  .status-msg.pending{ background:#fff8e6; color:#8a6100; display:block; }
+  table{ width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+  th,td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+  th{ color:var(--muted); font-weight:600; }
+  .stats-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px;}
+  @media (max-width:600px){ .stats-grid{ grid-template-columns:repeat(2,1fr);} }
+  .stat-box{ background:#f0f6f2; border-radius:8px; padding:12px; text-align:center; }
+  .stat-box .num{ font-size:22px; font-weight:700; color:var(--green-dark); }
+  .stat-box .lbl{ font-size:11px; color:var(--muted); }
+  #qrResult{ margin-top:14px; text-align:center; }
+  .hint{ font-size:12px; color:var(--muted); margin-top:4px; }
+  .lifecycle-key{ font-size:12px; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>♻️ E-Waste Tracking System (Sepolia Testnet)</h1>
+  <div>
+    <button id="connectBtn">Connect Wallet</button>
+    <div id="accountInfo"></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- 4.1 DEVICE REGISTRATION -->
+  <div class="card">
+    <h2>Register Device <small>Manufacturer only &middot; REQ-F-01</small></h2>
+    <div class="row">
+      <div><label>Device Type</label><input id="regType" placeholder="e.g. Laptop" /></div>
+      <div><label>Manufacturer Name</label><input id="regManuName" placeholder="e.g. Dell" /></div>
+    </div>
+    <div class="row">
+      <div><label>Date of Manufacture (YYYY-MM-DD)</label><input id="regDate" type="date" /></div>
+      <div><label>Serial Number</label><input id="regSerial" placeholder="Unique serial #" /></div>
+    </div>
+    <button class="action" onclick="registerDevice()">Register on Blockchain</button>
+    <div id="regMsg" class="status-msg"></div>
+    <div id="regLastIdBox" class="stat-box" style="display:none; margin-top:12px; max-width:200px;">
+      <div class="num" id="regLastId">-</div>
+      <div class="lbl">Your New Device ID</div>
+    </div>
+  </div>
+
+  <!-- 4.2 QR CODE -->
+  <div class="card">
+    <h2>Generate QR Code <small>Manufacturer only, right after registration &middot; REQ-F-02</small></h2>
+    <label>Device ID</label>
+    <input id="qrDeviceId" type="number" placeholder="e.g. 1" />
+    <button class="action" onclick="generateQR()">Generate QR</button>
+    <div id="qrMsg" class="status-msg"></div>
+    <div id="qrResult"></div>
+  </div>
+
+  <!-- DEVICE LOOKUP -->
+  <div class="card">
+    <h2>Scan / Look Up Device <small>Public &middot; REQ-F-06/07/08/09</small></h2>
+
+    <button class="action" id="startScanBtn" onclick="startScanner()">📷 Scan QR with Camera</button>
+    <button class="action secondary" id="stopScanBtn" onclick="stopScanner()" style="display:none;">Stop Camera</button>
+    <div id="qrReader" style="width:100%; max-width:360px; margin-top:12px;"></div>
+    <div id="scanMsg" class="status-msg"></div>
+
+    <div class="row" style="margin-top:16px;">
+      <div><label>Or by Device ID</label><input id="lookupId" type="number" placeholder="e.g. 1" /></div>
+      <div><label>Or manually enter QR Hash</label><input id="lookupQr" placeholder="paste QR hash (no camera)" /></div>
+    </div>
+    <button class="action" onclick="lookupById()">Look Up by ID</button>
+    <button class="action secondary" onclick="lookupByQr()">Look Up by QR</button>
+    <div id="lookupMsg" class="status-msg"></div>
+    <div id="deviceResult"></div>
+  </div>
+
+  <!-- 4.3 LIFECYCLE STATUS UPDATE -->
+  <div class="card">
+    <h2>Update Lifecycle Status <small>Collector / Recycler / Admin &middot; REQ-F-10..14</small></h2>
+    <div class="row">
+      <div><label>Device ID</label><input id="statusDeviceId" type="number" /></div>
+      <div>
+        <label>New Status</label>
+        <select id="newStatus">
+          <option value="3">Collected (Collector)</option>
+          <option value="4">Processing by Recycler (Recycler)</option>
+          <option value="5">Recycled / Disposed (Recycler)</option>
+          <option value="6">Closed (Admin)</option>
+        </select>
+      </div>
+    </div>
+    <label>Supporting Document IPFS Hash (optional)</label>
+    <input id="statusIpfs" placeholder="Qm... (leave blank if none)" />
+    <div class="lifecycle-key">Lifecycle order: Registered → QRGenerated → SoldWithConsumer → Collected → ProcessingByRecycler → RecycledDisposed → Closed (forward only, one step at a time)</div>
+    <button class="action" onclick="updateStatus()">Submit Status Update</button>
+    <div id="statusMsg" class="status-msg"></div>
+  </div>
+
+  <!-- 4.5 OWNERSHIP TRANSFER -->
+  <div class="card">
+    <h2>Ownership Transfer <small>REQ-F-19/20/21</small></h2>
+    <div class="row">
+      <div>
+        <h3 style="font-size:13px;">Step 1 — Current Owner Initiates</h3>
+        <label>Device ID</label><input id="transferDeviceId" type="number" />
+        <label>New Owner Wallet Address</label><input id="transferNewOwner" placeholder="0x..." />
+        <button class="action" onclick="initiateTransfer()">Initiate Transfer</button>
+      </div>
+      <div>
+        <h3 style="font-size:13px;">Step 2 — New Owner Accepts</h3>
+        <label>Device ID</label><input id="acceptDeviceId" type="number" />
+        <button class="action secondary" onclick="acceptTransfer()">Accept Transfer</button>
+      </div>
+    </div>
+    <div id="transferMsg" class="status-msg"></div>
+  </div>
+
+  <!-- 4.6 REGULATORY DASHBOARD -->
+  <div class="card">
+    <h2>Regulatory Dashboard <small>Regulator only &middot; REQ-F-22/23/24</small></h2>
+    <button class="action" onclick="loadDashboard()">Load Stats</button>
+    <div id="dashboardMsg" class="status-msg"></div>
+    <div class="stats-grid" id="statsGrid" style="display:none;">
+      <div class="stat-box"><div class="num" id="statRegistered">-</div><div class="lbl">Registered</div></div>
+      <div class="stat-box"><div class="num" id="statCollected">-</div><div class="lbl">Collected</div></div>
+      <div class="stat-box"><div class="num" id="statRecycled">-</div><div class="lbl">Recycled</div></div>
+      <div class="stat-box"><div class="num" id="statDisposed">-</div><div class="lbl">Disposed</div></div>
+    </div>
+    <label style="margin-top:14px;">Filter by Device Type</label>
+    <input id="filterType" placeholder="e.g. Laptop" />
+    <button class="action secondary" onclick="filterByType()">Get Count</button>
+    <div id="filterResult" class="hint"></div>
+  </div>
+
+  <!-- ADMIN: ROLE MANAGEMENT -->
+  <div class="card">
+    <h2>Assign Roles <small>Admin only &middot; Business Rule 5.4.1</small></h2>
+    <div class="row">
+      <div>
+        <label>Role</label>
+        <select id="roleSelect">
+          <option value="MANUFACTURER_ROLE">Manufacturer</option>
+          <option value="COLLECTOR_ROLE">Collector</option>
+          <option value="RECYCLER_ROLE">Certified Recycler</option>
+          <option value="REGULATOR_ROLE">Regulator</option>
+        </select>
+      </div>
+      <div><label>Wallet Address</label><input id="roleAddress" placeholder="0x..." /></div>
+    </div>
+    <button class="action" onclick="grantRole()">Grant Role</button>
+    <div id="roleMsg" class="status-msg"></div>
+  </div>
+
+  <!-- MY ROLE CHECK -->
+  <div class="card">
+    <h2>Check Any Wallet's Role</h2>
+    <label>Wallet Address</label>
+    <input id="checkAddress" placeholder="0x... (defaults to your connected wallet)" />
+    <button class="action secondary" onclick="checkRoles()">Check Roles</button>
+    <div id="roleCheckMsg" class="status-msg"></div>
+  </div>
+
+</main>
+
+<script>
+// ── PASTE YOUR DEPLOYED CONTRACT ADDRESS HERE (from Remix's Deploy tab) ──
+const CONTRACT_ADDRESS = "0x477B589E3bE87aCf76B34308E641Cc3C2D402ff6";
+
+// ── Contract ABI (compiled directly from EWasteTracking.sol) ──
+const CONTRACT_ABI = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "manufacturer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "deviceType",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "serialNumber",
+        "type": "string"
+      }
+    ],
+    "name": "DeviceRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "OwnershipTransferAccepted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferInitiated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "qrCodeHash",
+        "type": "string"
+      }
+    ],
+    "name": "QRCodeGenerated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum EWasteTracking.Status",
+        "name": "newStatus",
+        "type": "uint8"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "updatedBy",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "ipfsDocHash",
+        "type": "string"
+      }
+    ],
+    "name": "StatusUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "COLLECTOR_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MANUFACTURER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "RECYCLER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REGULATOR_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      }
+    ],
+    "name": "acceptOwnershipTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deviceCounter",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "devices",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "deviceType",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "manufacturerName",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dateOfManufacture",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "serialNumber",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "manufacturer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "currentOwner",
+        "type": "address"
+      },
+      {
+        "internalType": "enum EWasteTracking.Status",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string",
+        "name": "qrCodeHash",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "exists",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "devicesByType",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "qrCodeHash",
+        "type": "string"
+      }
+    ],
+    "name": "generateQRCode",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getDashboardStats",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "registered",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collected",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "recycled",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "disposed",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getDeviceById",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "deviceType",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "manufacturerName",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dateOfManufacture",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "serialNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "manufacturer",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "currentOwner",
+            "type": "address"
+          },
+          {
+            "internalType": "enum EWasteTracking.Status",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "string",
+            "name": "qrCodeHash",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "exists",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct EWasteTracking.Device",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "qrCodeHash",
+        "type": "string"
+      }
+    ],
+    "name": "getDeviceByQR",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "deviceType",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "manufacturerName",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dateOfManufacture",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "serialNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "manufacturer",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "currentOwner",
+            "type": "address"
+          },
+          {
+            "internalType": "enum EWasteTracking.Status",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "string",
+            "name": "qrCodeHash",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "exists",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct EWasteTracking.Device",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "deviceType",
+        "type": "string"
+      }
+    ],
+    "name": "getDeviceCountByType",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getDeviceHistory",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "enum EWasteTracking.Status",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "updatedBy",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "ipfsDocHash",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct EWasteTracking.StatusUpdate[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOwnershipHistory",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "from",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct EWasteTracking.OwnershipRecord[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "recycler",
+        "type": "address"
+      }
+    ],
+    "name": "getRecyclerActivity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getUserRoles",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "isAdmin",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isManufacturer",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isCollector",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isRecycler",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isRegulator",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "hasRole",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "initiateOwnershipTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "qrCodeUsed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "qrToDeviceId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "recyclerActivity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "deviceType",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "manufacturerName",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dateOfManufacture",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "serialNumber",
+        "type": "string"
+      }
+    ],
+    "name": "registerDevice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "callerConfirmation",
+        "type": "address"
+      }
+    ],
+    "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalCollected",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalDisposed",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalRecycled",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalRegisteredDevices",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferRequests",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "pending",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deviceId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum EWasteTracking.Status",
+        "name": "newStatus",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string",
+        "name": "ipfsDocHash",
+        "type": "string"
+      }
+    ],
+    "name": "updateStatus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
+const STATUS_NAMES = ["Registered","QRGenerated","SoldWithConsumer","Collected","ProcessingByRecycler","RecycledDisposed","Closed"];
+
+// Public read-only RPC so anyone scanning the QR can view device details
+// WITHOUT needing MetaMask installed or a wallet connected.
+const READONLY_RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
+
+let provider, signer, contract, currentAddress;
+let readOnlyContract = null;
+
+function rebuildContract(){
+  if(!ethers.isAddress(CONTRACT_ADDRESS)){
+    alert("CONTRACT_ADDRESS is not set correctly — open index.html and replace the placeholder at the top of the <script> with your deployed address.");
+    return;
+  }
+  contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+}
+
+// Returns a usable contract for READ-ONLY calls whether or not a wallet is connected.
+function getReadContract(){
+  if(contract) return contract;
+  if(!ethers.isAddress(CONTRACT_ADDRESS)) return null;
+  if(!readOnlyContract){
+    const roProvider = new ethers.JsonRpcProvider(READONLY_RPC_URL);
+    readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, roProvider);
+  }
+  return readOnlyContract;
+}
+
+async function connectWallet(){
+  if(!window.ethereum){ alert("MetaMask not found. Please install it."); return; }
+  try{
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+    currentAddress = await signer.getAddress();
+    document.getElementById("connectBtn").textContent = "Connected";
+    document.getElementById("accountInfo").innerHTML =
+      currentAddress.slice(0,6) + "..." + currentAddress.slice(-4) + '<div id="roleBadges"></div>';
+    rebuildContract();
+    if(contract) loadMyRoles();
+  }catch(e){ alert("Connection failed: " + (e.message || e)); }
+}
+document.getElementById("connectBtn").addEventListener("click", connectWallet);
+
+async function loadMyRoles(){
+  try{
+    const r = await contract.getUserRoles(currentAddress);
+    const badges = document.getElementById("roleBadges");
+    if(!badges) return;
+    let html = "";
+    if(r[0]) html += "<span>Admin</span>";
+    if(r[1]) html += "<span>Manufacturer</span>";
+    if(r[2]) html += "<span>Collector</span>";
+    if(r[3]) html += "<span>Recycler</span>";
+    if(r[4]) html += "<span>Regulator</span>";
+    if(!html) html = "<span>No role assigned</span>";
+    badges.innerHTML = html;
+  }catch(e){ /* contract address not set yet — ignore */ }
+}
+
+function showMsg(elId, type, text){
+  const el = document.getElementById(elId);
+  el.className = "status-msg " + type;
+  el.textContent = text;
+}
+
+function requireReady(){
+  if(!signer){ alert("Connect your wallet first."); return false; }
+  if(!contract){ alert("Paste and save the contract address first."); return false; }
+  return true;
+}
+
+function toTimestamp(dateStr){
+  return dateStr ? Math.floor(new Date(dateStr).getTime()/1000) : 0;
+}
+
+// ── 4.1 Register Device ──
+async function registerDevice(){
+  if(!requireReady()) return;
+  const type = document.getElementById("regType").value.trim();
+  const manuName = document.getElementById("regManuName").value.trim();
+  const date = toTimestamp(document.getElementById("regDate").value);
+  const serial = document.getElementById("regSerial").value.trim();
+  if(!type || !manuName || !serial){ showMsg("regMsg","err","Fill all fields."); return; }
+  try{
+    showMsg("regMsg","pending","Confirm the transaction in MetaMask...");
+    const tx = await contract.registerDevice(type, manuName, date, serial);
+    const receipt = await tx.wait();
+
+    // The contract auto-assigns the Device ID (deviceCounter++) — read it
+    // back from the DeviceRegistered event so the user doesn't have to guess it.
+    let newDeviceId = null;
+    for(const log of receipt.logs){
+      try{
+        const parsed = contract.interface.parseLog(log);
+        if(parsed && parsed.name === "DeviceRegistered"){
+          newDeviceId = parsed.args.deviceId.toString();
+          break;
+        }
+      }catch(e){ /* not our event — ignore */ }
+    }
+
+    if(newDeviceId){
+      showMsg("regMsg","ok", `Device registered! Assigned Device ID: ${newDeviceId} — copied into the QR field below.`);
+      document.getElementById("qrDeviceId").value = newDeviceId;
+      document.getElementById("regLastId").textContent = newDeviceId;
+      document.getElementById("regLastIdBox").style.display = "block";
+    } else {
+      showMsg("regMsg","ok","Device registered! Tx: " + receipt.hash);
+    }
+  }catch(e){ showMsg("regMsg","err", parseError(e)); }
+}
+
+// ── 4.2 Generate QR ──
+async function generateQR(){
+  if(!requireReady()) return;
+  const id = document.getElementById("qrDeviceId").value;
+  if(!id){ showMsg("qrMsg","err","Enter a device ID."); return; }
+  const qrHash = ethers.keccak256(ethers.toUtf8Bytes(id + "-" + Date.now() + "-" + currentAddress));
+  try{
+    showMsg("qrMsg","pending","Confirm the transaction in MetaMask...");
+    const tx = await contract.generateQRCode(id, qrHash);
+    await tx.wait();
+    showMsg("qrMsg","ok","QR code generated and anchored on-chain.");
+
+    // The QR image encodes a full LINK (not just the raw hash), so any
+    // standard phone camera / Google Lens scanner can open it directly
+    // and see the device details — no need for our in-app scanner.
+    const qrLink = window.location.origin + window.location.pathname + "?qr=" + qrHash;
+    document.getElementById("qrResult").innerHTML =
+      "<div id='qrCanvas'></div><p class='hint'>" + qrLink + "</p>";
+    new QRCode(document.getElementById("qrCanvas"), { text: qrLink, width:180, height:180 });
+  }catch(e){ showMsg("qrMsg","err", parseError(e)); }
+}
+
+// ── Device lookup ──
+function renderDevice(d, historyPromise){
+  const statusName = STATUS_NAMES[Number(d.status)] || d.status;
+  let html = `<table>
+    <tr><th>ID</th><td>${d.id}</td></tr>
+    <tr><th>Type</th><td>${d.deviceType}</td></tr>
+    <tr><th>Manufacturer Name</th><td>${d.manufacturerName}</td></tr>
+    <tr><th>Serial Number</th><td>${d.serialNumber}</td></tr>
+    <tr><th>Current Owner</th><td>${d.currentOwner}</td></tr>
+    <tr><th>Status</th><td>${statusName}</td></tr>
+    <tr><th>QR Hash</th><td>${d.qrCodeHash || "(not generated yet)"}</td></tr>
+  </table>`;
+  document.getElementById("deviceResult").innerHTML = html;
+  historyPromise.then(hist => {
+    if(!hist.length) return;
+    let rows = hist.map(h => `<tr><td>${STATUS_NAMES[Number(h.status)]}</td><td>${h.updatedBy.slice(0,8)}...</td><td>${new Date(Number(h.timestamp)*1000).toLocaleString()}</td></tr>`).join("");
+    document.getElementById("deviceResult").innerHTML += `<h3 style="font-size:13px;">History</h3><table><tr><th>Status</th><th>Updated By</th><th>When</th></tr>${rows}</table>`;
+  });
+}
+
+async function lookupById(){
+  const rc = getReadContract();
+  if(!rc){ showMsg("lookupMsg","err","Contract address is not set."); return; }
+  const id = document.getElementById("lookupId").value;
+  try{
+    const d = await rc.getDeviceById(id);
+    showMsg("lookupMsg","ok","Device found.");
+    renderDevice(d, rc.getDeviceHistory(id));
+  }catch(e){ showMsg("lookupMsg","err", parseError(e)); }
+}
+
+async function lookupByQr(){
+  const rc = getReadContract();
+  if(!rc){ showMsg("lookupMsg","err","Contract address is not set."); return; }
+  const qr = document.getElementById("lookupQr").value.trim();
+  try{
+    const d = await rc.getDeviceByQR(qr);
+    showMsg("lookupMsg","ok","Device found.");
+    renderDevice(d, rc.getDeviceHistory(d.id));
+  }catch(e){ showMsg("lookupMsg","err", parseError(e)); }
+}
+
+// If this page was opened from a scanned QR link (?qr=<hash>), auto-look it up —
+// works even if the visitor has no wallet/MetaMask, using the read-only RPC.
+window.addEventListener("load", () => {
+  const qrParam = new URLSearchParams(window.location.search).get("qr");
+  if(qrParam){
+    document.getElementById("lookupQr").value = qrParam;
+    lookupByQr();
+  }
+});
+
+// ── REQ-F-06: Live camera QR scanning ──
+let html5QrScanner = null;
+
+async function startScanner(){
+  if(!requireReady()) return;
+
+  if(!window.isSecureContext){
+    showMsg("scanMsg","err","Camera access needs HTTPS (or localhost). Opening this file directly via file:// won't allow camera use — host it (e.g. on Vercel/Netlify) or run it through a local server.");
+    return;
+  }
+
+  document.getElementById("qrReader").innerHTML = "";
+  html5QrScanner = new Html5Qrcode("qrReader");
+
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+  try{
+    await html5QrScanner.start(
+      { facingMode: "environment" }, // back camera on phones
+      config,
+      onScanSuccess,
+      () => { /* per-frame "not found" noise — ignore */ }
+    );
+    document.getElementById("startScanBtn").style.display = "none";
+    document.getElementById("stopScanBtn").style.display = "inline-block";
+    showMsg("scanMsg","pending","Point the camera at a device's QR code...");
+  }catch(e){
+    showMsg("scanMsg","err","Could not start camera: " + parseError(e) + ". Make sure you allowed camera permission.");
+  }
+}
+
+async function stopScanner(){
+  if(html5QrScanner){
+    try{ await html5QrScanner.stop(); html5QrScanner.clear(); }catch(e){}
+    html5QrScanner = null;
+  }
+  document.getElementById("startScanBtn").style.display = "inline-block";
+  document.getElementById("stopScanBtn").style.display = "none";
+  document.getElementById("scanMsg").className = "status-msg";
+}
+
+async function onScanSuccess(decodedText){
+  // Stop the camera immediately after a successful read
+  await stopScanner();
+
+  // Our newer QR codes encode a full link (…?qr=<hash>); older ones may be
+  // just the raw hash. Handle both.
+  let qrHash = decodedText;
+  try{
+    const url = new URL(decodedText);
+    const param = url.searchParams.get("qr");
+    if(param) qrHash = param;
+  }catch(e){ /* not a URL — treat decodedText as the raw hash */ }
+
+  document.getElementById("lookupQr").value = qrHash;
+  showMsg("scanMsg","ok","QR scanned! Looking up device...");
+  const rc = getReadContract();
+  try{
+    const d = await rc.getDeviceByQR(qrHash);
+    showMsg("lookupMsg","ok","Device found.");
+    renderDevice(d, rc.getDeviceHistory(d.id));
+  }catch(e){
+    // REQ-F-08: clear error message when the scanned code isn't a registered device
+    showMsg("scanMsg","err","This QR code does not match any registered device.");
+  }
+}
+
+// ── 4.3 Update Status ──
+async function updateStatus(){
+  if(!requireReady()) return;
+  const id = document.getElementById("statusDeviceId").value;
+  const status = document.getElementById("newStatus").value;
+  const ipfs = document.getElementById("statusIpfs").value.trim();
+  if(!id){ showMsg("statusMsg","err","Enter a device ID."); return; }
+  try{
+    showMsg("statusMsg","pending","Confirm the transaction in MetaMask...");
+    const tx = await contract.updateStatus(id, status, ipfs);
+    await tx.wait();
+    showMsg("statusMsg","ok","Status updated to " + STATUS_NAMES[status] + ".");
+  }catch(e){ showMsg("statusMsg","err", parseError(e)); }
+}
+
+// ── 4.5 Ownership Transfer ──
+async function initiateTransfer(){
+  if(!requireReady()) return;
+  const id = document.getElementById("transferDeviceId").value;
+  const newOwner = document.getElementById("transferNewOwner").value.trim();
+  if(!id || !ethers.isAddress(newOwner)){ showMsg("transferMsg","err","Enter valid device ID and address."); return; }
+  try{
+    showMsg("transferMsg","pending","Confirm in MetaMask...");
+    const tx = await contract.initiateOwnershipTransfer(id, newOwner);
+    await tx.wait();
+    showMsg("transferMsg","ok","Transfer initiated. New owner must now accept.");
+  }catch(e){ showMsg("transferMsg","err", parseError(e)); }
+}
+
+async function acceptTransfer(){
+  if(!requireReady()) return;
+  const id = document.getElementById("acceptDeviceId").value;
+  if(!id){ showMsg("transferMsg","err","Enter device ID."); return; }
+  try{
+    showMsg("transferMsg","pending","Confirm in MetaMask...");
+    const tx = await contract.acceptOwnershipTransfer(id);
+    await tx.wait();
+    showMsg("transferMsg","ok","Transfer accepted — you are now the owner.");
+  }catch(e){ showMsg("transferMsg","err", parseError(e)); }
+}
+
+// ── 4.6 Dashboard ──
+async function loadDashboard(){
+  if(!requireReady()) return;
+  try{
+    const [reg, col, rec, dis] = await contract.getDashboardStats();
+    document.getElementById("statRegistered").textContent = reg;
+    document.getElementById("statCollected").textContent = col;
+    document.getElementById("statRecycled").textContent = rec;
+    document.getElementById("statDisposed").textContent = dis;
+    document.getElementById("statsGrid").style.display = "grid";
+    showMsg("dashboardMsg","ok","Stats loaded.");
+  }catch(e){ showMsg("dashboardMsg","err", parseError(e)); }
+}
+
+async function filterByType(){
+  if(!requireReady()) return;
+  const type = document.getElementById("filterType").value.trim();
+  try{
+    const count = await contract.getDeviceCountByType(type);
+    document.getElementById("filterResult").textContent = `${type}: ${count} device(s)`;
+  }catch(e){ document.getElementById("filterResult").textContent = parseError(e); }
+}
+
+// ── Admin: Grant Role ──
+async function grantRole(){
+  if(!requireReady()) return;
+  const roleName = document.getElementById("roleSelect").value;
+  const addr = document.getElementById("roleAddress").value.trim();
+  if(!ethers.isAddress(addr)){ showMsg("roleMsg","err","Enter a valid address."); return; }
+  try{
+    const roleHash = await contract[roleName]();
+    showMsg("roleMsg","pending","Confirm in MetaMask...");
+    const tx = await contract.grantRole(roleHash, addr);
+    await tx.wait();
+    showMsg("roleMsg","ok", roleName + " granted to " + addr);
+  }catch(e){ showMsg("roleMsg","err", parseError(e)); }
+}
+
+// ── Role checker ──
+async function checkRoles(){
+  if(!requireReady()) return;
+  const addr = document.getElementById("checkAddress").value.trim() || currentAddress;
+  try{
+    const r = await contract.getUserRoles(addr);
+    const names = ["Admin","Manufacturer","Collector","Recycler","Regulator"];
+    const active = names.filter((n,i) => r[i]);
+    showMsg("roleCheckMsg","ok", active.length ? active.join(", ") : "No role assigned to this wallet.");
+  }catch(e){ showMsg("roleCheckMsg","err", parseError(e)); }
+}
+
+function parseError(e){
+  if(e.reason) return e.reason;
+  if(e.shortMessage) return e.shortMessage;
+  if(e.message) return e.message.slice(0,180);
+  return String(e);
+}
+</script>
+</body>
+</html>

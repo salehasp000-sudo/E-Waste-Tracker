@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Grant, revoke and check the roles that control who can act on the contract.">
+  <meta name="theme-color" content="#0b2b26">
+  <title>Access control | E-Waste Tracker</title>
+  <script>(function(){try{var t=localStorage.getItem('ew_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admin">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="site-header"></div>
+
+  <main id="main">
+    <section class="page-head">
+      <div class="container">
+        <div>
+          <h1>Access control</h1>
+          <p>Decide which wallets can register devices, collect them, recycle them or read regulator figures.</p>
+          <span class="chip chip-light">Admin role required</span>
+        </div>
+        <div class="page-stage"><canvas id="sceneCanvas" data-scene="shield" role="img" aria-label="A keyed core inside rotating rings"></canvas></div>
+      </div>
+    </section>
+
+    <div class="container page-body">
+      <div id="adminRole" class="notice notice-info role-note" hidden></div>
+
+      <div class="grid-2">
+        <section class="panel" aria-labelledby="grantTitle">
+          <div class="panel-head"><div><h2 id="grantTitle">Grant or revoke a role</h2><p>Takes effect as soon as the transaction confirms.</p></div></div>
+          <form id="roleForm" novalidate>
+            <label class="field"><span>Role</span>
+              <select id="roleSelect">
+                <option value="MANUFACTURER_ROLE">Manufacturer</option>
+                <option value="COLLECTOR_ROLE">Collector</option>
+                <option value="RECYCLER_ROLE">Certified recycler</option>
+                <option value="REGULATOR_ROLE">Regulator</option>
+              </select>
+            </label>
+            <label class="field"><span>Wallet address</span><input id="roleAddress" placeholder="0x…" autocomplete="off" spellcheck="false" required></label>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="grantBtn" type="submit">Grant role</button>
+              <button class="btn btn-outline" id="revokeBtn" type="button">Revoke role</button>
+            </div>
+            <div id="roleMsg" class="notice" hidden></div>
+          </form>
+        </section>
+
+        <div class="stack">
+          <section class="panel" aria-labelledby="checkTitle">
+            <div class="panel-head"><div><h2 id="checkTitle">Check a wallet</h2><p>Leave blank to check the wallet you're connected with.</p></div></div>
+            <form id="checkForm" novalidate>
+              <label class="field"><span>Wallet address</span><input id="checkAddress" placeholder="0x…" autocomplete="off" spellcheck="false"></label>
+              <button class="btn btn-outline" id="checkBtn" type="submit">Check roles</button>
+            </form>
+            <div id="roleCheckMsg" class="notice" hidden></div>
+            <div class="chips" id="roleChips" style="margin-top:14px"></div>
+          </section>
+
+          <section class="panel" aria-labelledby="refTitle">
+            <div class="panel-head"><div><h2 id="refTitle">What each role can do</h2></div></div>
+            <ul class="role-cards">
+              <li><strong>Manufacturer</strong><span>Register devices, create QR codes</span></li>
+              <li><strong>Collector</strong><span>Mark devices as collected</span></li>
+              <li><strong>Recycler</strong><span>Record processing and outcome</span></li>
+              <li><strong>Regulator</strong><span>Read programme figures</span></li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

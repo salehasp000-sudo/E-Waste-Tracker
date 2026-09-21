@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Register a new device on the blockchain and generate its QR label.">
+  <meta name="theme-color" content="#0b2b26">
+  <title>Register a device | E-Waste Tracker</title>
+  <script>(function(){try{var t=localStorage.getItem('ew_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="register">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="site-header"></div>
+
+  <main id="main">
+    <section class="page-head">
+      <div class="container">
+        <div>
+          <h1>Register a device</h1>
+          <p>Record a new device on the blockchain, then attach a unique QR code you can print on its label.</p>
+          <span class="chip chip-light">Manufacturer role required</span>
+        </div>
+        <div class="page-stage"><canvas id="sceneCanvas" data-scene="cube" role="img" aria-label="Rotating lattice of data blocks"></canvas></div>
+      </div>
+    </section>
+
+    <div class="container page-body">
+      <div id="registerRole" class="notice notice-info role-note" hidden></div>
+
+      <div class="grid-2">
+        <section class="panel" aria-labelledby="regTitle">
+          <div class="panel-head">
+            <span class="step-badge">1</span>
+            <div><h2 id="regTitle">Device details</h2><p>These are written to the blockchain and can't be edited later.</p></div>
+          </div>
+          <form id="registerForm" novalidate>
+            <div class="field-row">
+              <label class="field"><span>Device type</span><input id="regType" list="typeList" placeholder="Laptop" autocomplete="off" required>
+                <datalist id="typeList"><option>Laptop</option><option>Smartphone</option><option>Tablet</option><option>Monitor</option><option>Television</option><option>Printer</option><option>Router</option><option>Battery pack</option></datalist>
+              </label>
+              <label class="field"><span>Manufacturer name</span><input id="regManuName" placeholder="Dell" autocomplete="organization" required></label>
+            </div>
+            <div class="field-row">
+              <label class="field"><span>Date of manufacture</span><input id="regDate" type="date" required></label>
+              <label class="field"><span>Serial number</span><input id="regSerial" placeholder="A unique serial number" autocomplete="off" required></label>
+            </div>
+            <button class="btn btn-primary" id="regBtn" type="submit">Register on blockchain</button>
+            <div id="regMsg" class="notice" hidden></div>
+          </form>
+
+          <div id="regResult" hidden>
+            <div class="preview">
+              <h3>Device registered</h3>
+              <p>Your device ID is <strong class="mono" id="regNewId">–</strong>. Keep it: you need it to create the QR code.</p>
+              <button class="btn btn-gold btn-sm" id="toQrBtn" type="button">Create its QR code</button>
+            </div>
+          </div>
+
+          <div id="recentBox" hidden>
+            <h3 style="margin-top:28px;font-size:1rem">Registered in this browser</h3>
+            <ul class="recent" id="recentList"></ul>
+          </div>
+        </section>
+
+        <section class="panel" id="qrPanel" aria-labelledby="qrTitle">
+          <div class="panel-head">
+            <span class="step-badge">2</span>
+            <div><h2 id="qrTitle">QR code</h2><p>Create the label right after registering. It links straight to the device's public page.</p></div>
+          </div>
+          <form id="qrForm" novalidate>
+            <label class="field"><span>Device ID</span><input id="qrDeviceId" type="number" min="1" step="1" inputmode="numeric" placeholder="1" required>
+              <small>Filled in automatically after you register a device.</small></label>
+            <button class="btn btn-primary" id="qrBtn" type="submit">Generate QR code</button>
+            <div id="qrMsg" class="notice" hidden></div>
+          </form>
+
+          <div class="qr-card tilt" id="qrCard" data-tilt="8" hidden>
+            <div class="qr-frame"><div id="qrCanvas"></div></div>
+            <p class="qr-link mono" id="qrLink"></p>
+            <div class="btn-row" style="justify-content:center">
+              <button class="btn btn-primary btn-sm" id="qrDownload" type="button">Download PNG</button>
+              <button class="btn btn-outline btn-sm" id="qrCopy" type="button">Copy link</button>
+              <a class="btn btn-outline btn-sm" id="qrOpen" href="track.html">Open device page</a>
+            </div>
+            <p class="muted" id="qrHostNote" style="margin:0;font-size:.82rem" hidden></p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/register.js"></script>
+</body>
+</html>

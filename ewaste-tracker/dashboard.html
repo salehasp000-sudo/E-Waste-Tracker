@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Programme-wide totals, counts by device type and recycler activity, read straight from the contract.">
+  <meta name="theme-color" content="#0b2b26">
+  <title>Regulatory dashboard | E-Waste Tracker</title>
+  <script>(function(){try{var t=localStorage.getItem('ew_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="dashboard">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="site-header"></div>
+
+  <main id="main">
+    <section class="page-head">
+      <div class="container">
+        <div>
+          <h1>Regulatory dashboard</h1>
+          <p>Programme-wide totals, counts by device type and recycler activity, read straight from the contract.</p>
+          <span class="chip chip-light">Built for regulators</span>
+        </div>
+        <div class="page-stage"><canvas id="sceneCanvas" data-scene="bars" role="img" aria-label="3D bars that grow with the live totals"></canvas></div>
+      </div>
+    </section>
+
+    <div class="container page-body">
+      <section class="panel lock-panel" id="dashLocked" aria-live="polite">
+        <svg class="lock-icon" viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <h2 id="lockTitle">Regulator access only</h2>
+        <p class="muted" id="lockText">Connect a wallet that holds the Regulator role to see these figures.</p>
+        <div class="btn-row" id="lockActions" style="justify-content:center"></div>
+      </section>
+
+      <div id="dashContent" hidden>
+      <div class="dash-head">
+        <p id="dashSource">Loading totals…</p>
+        <button class="btn btn-outline btn-sm" id="refreshBtn" type="button">Refresh</button>
+      </div>
+
+      <div class="kpis" aria-label="Totals">
+        <div class="kpi"><span class="kpi-num" id="statRegistered">–</span><span class="kpi-label">Registered</span></div>
+        <div class="kpi"><span class="kpi-num" id="statCollected">–</span><span class="kpi-label">Collected</span></div>
+        <div class="kpi"><span class="kpi-num" id="statRecycled">–</span><span class="kpi-label">Recycled</span></div>
+        <div class="kpi"><span class="kpi-num" id="statDisposed">–</span><span class="kpi-label">Disposed</span></div>
+      </div>
+
+      <div class="grid-2" style="margin-top:24px">
+        <section class="panel" aria-labelledby="funnelTitle">
+          <div class="panel-head"><div><h2 id="funnelTitle">Share of registered devices</h2><p id="rateText">Processed rate appears once totals load.</p></div></div>
+          <div class="bars">
+            <div class="bar-row"><span>Registered</span><div class="bar-track"><div class="bar-fill" id="barRegistered"></div></div><span class="bar-val" id="valRegistered">–</span></div>
+            <div class="bar-row"><span>Collected</span><div class="bar-track"><div class="bar-fill" id="barCollected"></div></div><span class="bar-val" id="valCollected">–</span></div>
+            <div class="bar-row"><span>Recycled</span><div class="bar-track"><div class="bar-fill" id="barRecycled"></div></div><span class="bar-val" id="valRecycled">–</span></div>
+            <div class="bar-row"><span>Disposed</span><div class="bar-track"><div class="bar-fill" id="barDisposed"></div></div><span class="bar-val" id="valDisposed">–</span></div>
+          </div>
+        </section>
+
+        <div class="stack">
+          <section class="panel" aria-labelledby="typeTitle">
+            <div class="panel-head"><div><h2 id="typeTitle">Devices by type</h2><p>How many devices of one type are registered.</p></div></div>
+            <form id="typeForm" novalidate>
+              <label class="field"><span>Device type</span><input id="filterType" placeholder="Laptop" autocomplete="off"></label>
+              <button class="btn btn-outline" type="submit">Get count</button>
+            </form>
+            <p class="result-line" id="typeResult" hidden></p>
+          </section>
+
+          <section class="panel" aria-labelledby="recTitle">
+            <div class="panel-head"><div><h2 id="recTitle">Recycler activity</h2><p>How many updates a recycler has recorded.</p></div></div>
+            <form id="recyclerForm" novalidate>
+              <label class="field"><span>Recycler wallet address</span><input id="recyclerAddr" placeholder="0x…" autocomplete="off" spellcheck="false"></label>
+              <button class="btn btn-outline" type="submit">Check activity</button>
+            </form>
+            <p class="result-line" id="recyclerResult" hidden></p>
+          </section>
+        </div>
+      </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Device — EcoChain</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="ages.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <div class="page-wrapper">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="container">
+        <a href="../index.html" class="nav-logo">
+          <div class="logo-icon">♻</div>Eco<span>Chain</span>
+        </a>
+        <div class="nav-links">
+          <a href="../index.html" class="nav-link">Home</a>
+          <a href="register.html" class="nav-link active">Register Device</a>
+          <a href="track.html"    class="nav-link">Track Device</a>
+          <a href="dashboard.html" class="nav-link">Dashboard</a>
+          <a href="lifecycle.html" class="nav-link">Lifecycle</a>
+          <a href="profile.html"  class="nav-link">My Devices</a>
+        </div>
+        <div class="nav-actions">
+          <button id="connect-wallet-btn" class="btn btn-primary btn-sm">
+            🦊 Connect Wallet
+          </button>
+          <div id="wallet-badge" class="wallet-badge" style="display:none">
+            <div class="wallet-dot"></div><span class="wallet-addr">—</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="container">
+        <!-- <div class="section-label">REQ-F-01 to F-05</div> -->
+        <h1>Register <span class="text-cyan">New Device</span></h1>
+        <p>Record a new electronic device on the Ethereum blockchain. A unique QR code will be generated after on-chain confirmation.</p>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <section class="section-sm">
+      <div class="container">
+        <div class="reg-layout">
+
+          <!-- Left: Form -->
+          <div class="reg-form-col">
+            <!-- Wallet gate -->
+            <div class="wallet-gate card" id="wallet-gate-msg">
+              <div style="text-align:center;padding:20px">
+                <div style="font-size:3rem;margin-bottom:16px">🦊</div>
+                <h3>Connect Your Wallet</h3>
+                <p style="margin:12px 0 24px">You need MetaMask connected to register devices on the blockchain.</p>
+                <button class="btn btn-primary" onclick="connectWallet()">Connect MetaMask</button>
+              </div>
+            </div>
+
+            <!-- Registration form (shown after connect) -->
+            <div class="wallet-required" style="display:none" id="reg-form-section">
+              <div id="wallet-info" class="card" style="margin-bottom:24px;display:flex;align-items:center;gap:16px">
+                <!-- Populated by JS -->
+              </div>
+
+              <div class="card">
+                <h3 style="margin-bottom:24px">Device Information</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Device Type *</label>
+                    <select class="form-control" id="device-type">
+                      <option value="">Select type...</option>
+                      <option>Smartphone</option>
+                      <option>Laptop</option>
+                      <option>Desktop / PC</option>
+                      <option>Tablet</option>
+                      <option>Television</option>
+                      <option>Monitor</option>
+                      <option>Printer</option>
+                      <option>Refrigerator</option>
+                      <option>Other Appliance</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Device Name / Model *</label>
+                    <input type="text" class="form-control" id="device-name" placeholder="e.g. Samsung Galaxy S22" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Manufacturer *</label>
+                    <input type="text" class="form-control" id="manufacturer" placeholder="e.g. Samsung Electronics" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Serial Number *</label>
+                    <input type="text" class="form-control" id="serial" placeholder="e.g. SN-K9X3-2024-7721" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Date of Manufacture *</label>
+                    <input type="date" class="form-control" id="dop" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Initial Owner Wallet</label>
+                    <input type="text" class="form-control" id="owner-wallet" placeholder="Auto-filled from MetaMask" readonly style="opacity:0.6" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Additional Notes</label>
+                  <textarea class="form-control" id="notes" placeholder="Any additional device information..."></textarea>
+                </div>
+
+                <!-- Gas estimate -->
+                <div class="gas-estimate">
+                  <span class="mono" style="color:var(--text-muted);font-size:0.78rem">Estimated Gas Fee:</span>
+                  <span class="mono text-amber" style="font-size:0.82rem">~0.0012 ETH (~$2.40)</span>
+                  <span class="badge badge-green"><span class="dot"></span> Sepolia</span>
+                </div>
+
+                <button class="btn btn-primary" style="width:100%;margin-top:8px" id="register-btn" onclick="submitRegistration()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  Submit to Blockchain
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Info + QR result -->
+          <div class="reg-info-col">
+            <!-- Steps card -->
+            <div class="card" style="margin-bottom:24px">
+              <h4 style="margin-bottom:20px">Registration Steps</h4>
+              <div class="status-track" id="reg-steps">
+                <div class="status-step">
+                  <div class="status-dot current" id="step-1-dot">1</div>
+                  <div>
+                    <div style="font-weight:600;font-size:0.9rem">Connect MetaMask</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted)">Authenticate with your Ethereum wallet</div>
+                  </div>
+                </div>
+                <div class="status-step">
+                  <div class="status-dot" id="step-2-dot">2</div>
+                  <div>
+                    <div style="font-weight:600;font-size:0.9rem">Fill Device Details</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted)">Enter device type, serial, manufacturer</div>
+                  </div>
+                </div>
+                <div class="status-step">
+                  <div class="status-dot" id="step-3-dot">3</div>
+                  <div>
+                    <div style="font-weight:600;font-size:0.9rem">Confirm Transaction</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted)">MetaMask will prompt for gas approval</div>
+                  </div>
+                </div>
+                <div class="status-step" style="padding-bottom:0">
+                  <div class="status-dot" id="step-4-dot">4</div>
+                  <div>
+                    <div style="font-weight:600;font-size:0.9rem">QR Code Generated</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted)">Download & attach to physical device</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- QR result (shown after registration) -->
+            <div class="card" id="qr-result" style="display:none">
+              <div class="success-banner">
+                <span class="text-green" style="font-size:1.5rem">✓</span>
+                <span style="font-weight:700">Device Registered on Blockchain!</span>
+              </div>
+              <div class="qr-box">
+                <div id="qrcode-display"></div>
+              </div>
+              <div class="qr-meta">
+                <div class="qr-meta-row">
+                  <span class="mono" style="color:var(--text-muted)">Device ID</span>
+                  <span class="mono text-cyan" id="result-id">—</span>
+                </div>
+                <div class="qr-meta-row">
+                  <span class="mono" style="color:var(--text-muted)">Tx Hash</span>
+                  <span class="mono text-cyan" id="result-tx" style="font-size:0.78rem">—</span>
+                </div>
+                <div class="qr-meta-row">
+                  <span class="mono" style="color:var(--text-muted)">Block</span>
+                  <span class="mono text-green" id="result-block">—</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:16px">
+                <button class="btn btn-green btn-sm" style="flex:1" onclick="downloadQR()">⬇ Download QR</button>
+                <button class="btn btn-outline btn-sm" style="flex:1" onclick="printQR()">🖨 Print QR</button>
+              </div>
+            </div>
+
+            <!-- Info box -->
+            <div class="card" style="margin-top:20px;background:rgba(0,212,255,0.03);border-color:rgba(0,212,255,0.15)">
+              <h4 style="margin-bottom:12px;font-size:0.95rem">⬡ Blockchain Notes</h4>
+              <ul style="display:flex;flex-direction:column;gap:8px">
+                <li style="font-size:0.82rem;color:var(--text-secondary)">• Records are <strong>permanent</strong> once confirmed. Cannot be deleted.</li>
+                <li style="font-size:0.82rem;color:var(--text-secondary)">• Each registration calls the <span class="mono text-cyan">registerDevice()</span> smart contract function.</li>
+                <li style="font-size:0.82rem;color:var(--text-secondary)">• QR code is cryptographically linked to on-chain device ID.</li>
+                <li style="font-size:0.82rem;color:var(--text-secondary)">• Confirmation time: ~15–30 seconds on Sepolia.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- TX Pending Modal -->
+  <div class="modal-overlay" id="tx-modal">
+    <div class="modal">
+      <h3 style="margin-bottom:16px">⟠ Processing Transaction</h3>
+      <div style="text-align:center;padding:24px 0">
+        <div class="spinner" style="width:48px;height:48px;border-width:3px;margin:0 auto 20px"></div>
+        <p id="tx-status-msg">Waiting for MetaMask confirmation...</p>
+        <div class="progress-bar" style="margin-top:24px">
+          <div class="progress-fill" id="tx-progress" style="width:0%"></div>
+        </div>
+        <div class="mono" style="font-size:0.72rem;color:var(--text-muted);margin-top:12px" id="tx-hash-preview">
+          Tx hash will appear here...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    // Pre-fill wallet
+    function fillWalletField() {
+      const field = document.getElementById('owner-wallet');
+      if (field && AppState.walletAddress) field.value = AppState.walletAddress;
+    }
+
+    function submitRegistration() {
+      const dtype   = document.getElementById('device-type').value;
+      const dname   = document.getElementById('device-name').value.trim();
+      const mfr     = document.getElementById('manufacturer').value.trim();
+      const serial  = document.getElementById('serial').value.trim();
+      const dop     = document.getElementById('dop').value;
+
+      if (!dtype || !dname || !mfr || !serial || !dop) {
+        showToast('Please fill all required fields.', 'error'); return;
+      }
+      if (!AppState.walletConnected) {
+        showToast('Connect your wallet first.', 'error'); return;
+      }
+
+      // Open modal
+      openModal('tx-modal');
+      const msgs = [
+        'Waiting for MetaMask confirmation...',
+        'Transaction submitted to mempool...',
+        'Awaiting block confirmation...',
+        'Recording on Ethereum Sepolia...',
+      ];
+      let pct = 0, msgIdx = 0;
+      const prog = document.getElementById('tx-progress');
+      const msgEl = document.getElementById('tx-status-msg');
+      const txPrev = document.getElementById('tx-hash-preview');
+
+      txPrev.textContent = 'Tx ' + randomHash(16);
+
+      const interval = setInterval(() => {
+        pct += 14;
+        prog.style.width = Math.min(pct, 95) + '%';
+        if (msgIdx < msgs.length - 1) msgEl.textContent = msgs[++msgIdx];
+      }, 700);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        prog.style.width = '100%';
+        closeModal('tx-modal');
+
+        // Generate device ID
+        const devId = 'DEV-' + Math.floor(Math.random()*900+100) + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+        const txHash = randomHash(16);
+        const blockNum = 7842202 + Math.floor(Math.random()*5);
+
+        document.getElementById('result-id').textContent   = devId;
+        document.getElementById('result-tx').textContent   = txHash;
+        document.getElementById('result-block').textContent= '#' + blockNum;
+        document.getElementById('qr-result').style.display = 'block';
+
+        // Generate QR
+        document.getElementById('qrcode-display').innerHTML = '';
+        new QRCode(document.getElementById('qrcode-display'), {
+          text: `ECOCHAIN:${devId}`,
+          width: 180, height: 180,
+          colorDark: '#00d4ff',
+          colorLight: '#0a1e30',
+        });
+
+        // Update steps
+        ['step-1-dot','step-2-dot','step-3-dot','step-4-dot'].forEach(id => {
+          const el = document.getElementById(id);
+          el.classList.remove('current');
+          el.classList.add('done');
+          el.textContent = '✓';
+        });
+
+        showToast('Device successfully registered on blockchain!', 'success', 5000);
+      }, 4200);
+    }
+
+    function downloadQR() {
+      const canvas = document.querySelector('#qrcode-display canvas');
+      if (!canvas) { showToast('QR not ready', 'error'); return; }
+      const link = document.createElement('a');
+      link.download = `EcoChain-${document.getElementById('result-id').textContent}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      showToast('QR code downloaded!', 'success', 2000);
+    }
+    function printQR() { showToast('Print dialog would open here.', 'info', 2000); }
+
+    // Override connectWallet to also fill wallet field
+    const _orig = window.connectWallet;
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('connect-wallet-btn');
+      if (btn) btn.addEventListener('click', () => {
+        connectWallet();
+        setTimeout(fillWalletField, 2000);
+        setTimeout(() => {
+          document.getElementById('step-1-dot').classList.remove('current');
+          document.getElementById('step-1-dot').classList.add('done');
+          document.getElementById('step-1-dot').textContent = '✓';
+          document.getElementById('step-2-dot').classList.add('current');
+        }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>

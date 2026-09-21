@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Trace electronics from manufacturer to recycler with QR codes and an unalterable record on the Ethereum Sepolia network.">
+  <meta name="theme-color" content="#0b2b26">
+  <title>E-Waste Tracker: every device, traced to its recycler</title>
+  <script>(function(){try{var t=localStorage.getItem('ew_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="home">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="site-header"></div>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="hero-tag"><span class="dot dot-live"></span> Live on Ethereum Sepolia</p>
+          <h1>Every device, traced from factory to recycler</h1>
+          <p class="lead">Register electronics, tag each one with a QR code, and let collectors and recyclers log every hand-off on a record nobody can rewrite.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="register.html">Register a device</a>
+            <a class="btn btn-ghost btn-lg" href="track.html">Track a device</a>
+          </div>
+          <p class="hero-note">You don't need a wallet to look a device up. Scan its QR code and the history opens.</p>
+        </div>
+        <div class="hero-stage">
+          <canvas id="heroCanvas" data-scene="globe" role="img" aria-label="Interactive 3D model: devices orbiting a recycling core"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="stat-band" aria-label="Live totals from the contract">
+      <div class="container stat-grid">
+        <div class="stat"><span class="stat-num" id="statRegistered">–</span><span class="stat-label">Devices registered</span></div>
+        <div class="stat"><span class="stat-num" id="statCollected">–</span><span class="stat-label">Collected</span></div>
+        <div class="stat"><span class="stat-num" id="statRecycled">–</span><span class="stat-label">Recycled</span></div>
+        <div class="stat"><span class="stat-num" id="statDisposed">–</span><span class="stat-label">Disposed</span></div>
+      </div>
+      <p class="container stat-note" id="statNote">Reading totals from the contract…</p>
+    </section>
+
+    <section class="section" id="lifecycle">
+      <div class="container">
+        <div class="section-head">
+          <h2>Seven steps, one direction</h2>
+          <p>A device only moves forward, one step at a time. Each step is stamped with who made it and when.</p>
+        </div>
+        <ol class="track">
+          <li><span class="pad">1</span><h3>Registered</h3><p>The manufacturer records the device and its serial number.</p></li>
+          <li><span class="pad">2</span><h3>QR generated</h3><p>A unique QR code is tied to the device on-chain.</p></li>
+          <li><span class="pad">3</span><h3>Sold with consumer</h3><p>The device reaches its first consumer owner.</p></li>
+          <li><span class="pad">4</span><h3>Collected</h3><p>A collector takes it in at end of life.</p></li>
+          <li><span class="pad">5</span><h3>Processing</h3><p>A certified recycler starts dismantling it.</p></li>
+          <li><span class="pad">6</span><h3>Recycled or disposed</h3><p>The recycler records the outcome and attaches proof.</p></li>
+          <li><span class="pad">7</span><h3>Closed</h3><p>An admin closes the record.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="roles">
+      <div class="container">
+        <div class="section-head">
+          <h2>Who does what</h2>
+          <p>Permissions are enforced by the smart contract, not by this website. A wallet can only do what its role allows.</p>
+        </div>
+        <div class="role-list">
+          <div class="role-row"><h3>Manufacturer</h3><p>Registers new devices and generates their QR codes.</p><a class="btn btn-outline btn-sm" href="register.html">Register devices</a></div>
+          <div class="role-row"><h3>Collector</h3><p>Marks devices as collected when they are taken in.</p><a class="btn btn-outline btn-sm" href="lifecycle.html">Update status</a></div>
+          <div class="role-row"><h3>Certified recycler</h3><p>Records processing and the final recycled or disposed result, with an optional IPFS document.</p><a class="btn btn-outline btn-sm" href="lifecycle.html">Update status</a></div>
+          <div class="role-row"><h3>Regulator</h3><p>Reads programme-wide totals, counts by device type and recycler activity.</p><a class="btn btn-outline btn-sm" href="dashboard.html">Open dashboard</a></div>
+          <div class="role-row"><h3>Admin</h3><p>Grants and revokes roles, and closes finished records.</p><a class="btn btn-outline btn-sm" href="admin.html">Manage roles</a></div>
+          <div class="role-row"><h3>Owner or anyone</h3><p>Scan a QR code to see a device's history. Current owners can hand a device to someone else.</p><a class="btn btn-outline btn-sm" href="transfer.html">Transfer ownership</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="container cta-inner">
+        <div>
+          <h2>Holding a device with a QR label?</h2>
+          <p>Point your phone camera at it, or open the tracker and scan it there. You'll see where it has been and who handled it.</p>
+        </div>
+        <a class="btn btn-gold btn-lg" href="track.html">Scan a QR code</a>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>
